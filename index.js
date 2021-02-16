@@ -1,5 +1,8 @@
-const http = require('http');
 const {ApolloServer, gql } = require('apollo-server');
+const fetch = require('node-fetch');
+
+var coins;
+var markets;
 
 const typeDefs = gql`
     type Coin {
@@ -13,31 +16,32 @@ const typeDefs = gql`
         rank: String
     }
 
+    type CoinMarket {
+        name: String
+        base: String
+        qoute: String
+        price: String
+        volume: String
+        time: String
+    }
+
     type Query {
         coins: [Coin]!
         coin(nameid: String!): Coin
+        coinMarket(cid: String): [CoinMarket]!
     }
 `;
 
 const resolvers = {
     Query: {
-        coins: () => coins,
+        coins: () => getCoins(),
         coin: (_, {nameid}, __) =>  getCoinByName(nameid, coins),
+        coinMarket: (_,{cid},__) => getCoinMarkets(cid),
     },
 };
 
-function getCoinByName(nameid, coins) {
-    for (var i=0; i<coins.length;i++) {
-        if(coins[i].nameid == nameid) {
-            return coins[i]
-        }
-    }
-}
-
-const fetch = require('node-fetch');
-var coins;
-
-fetch('https://api.coinlore.net/api/tickers/')
+async function getCoins() {
+    await fetch('https://api.coinlore.net/api/tickers/')
     .then(res => res.json())
     .then(data => {
         console.log("First coin in the array:");
@@ -47,6 +51,28 @@ fetch('https://api.coinlore.net/api/tickers/')
         coins = data.data;
         console.log(coins[1]);
 })
+    return coins;
+}
+
+async function getCoinMarkets(id) {
+    await fetch(`https://api.coinlore.net/api/coin/markets/?id=${id}`)
+    .then(res => res.json())
+    .then(data => {
+        console.log("First Market in array:");
+        console.log(data[0].name)
+        markets = data;
+    })
+
+    return markets;
+}
+
+function getCoinByName(nameid, coins) {
+    for (var i=0; i<coins.length;i++) {
+        if(coins[i].nameid == nameid) {
+            return coins[i]
+        }
+    }
+}
 
 const server = new ApolloServer({ typeDefs, resolvers});
 
