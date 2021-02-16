@@ -1,5 +1,5 @@
 # Coinlore API 
-## Wrapper in Graph QL
+## Wrapped in Graph QL
 ## Hosted on Apollo Server
 
 # Installation
